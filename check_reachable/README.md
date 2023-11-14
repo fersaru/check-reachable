@@ -1,0 +1,4 @@
+- connect via ssh
+- ping hosts from ssh'ed host
+- check if ping returns true
+- file containing hosts to check
