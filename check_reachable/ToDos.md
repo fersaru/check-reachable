@@ -1,0 +1,3 @@
+- connect one time to jump host rather than at every ping attempt
+- try other approaches than ping
+    - e.g.: nc, nmap
