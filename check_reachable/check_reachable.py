@@ -1,8 +1,12 @@
 import argparse
-from paramiko import SSHClient
 import subprocess
 
-if __name__ == "__main__":
+class bash_colors:
+    OKGREEN = '\033[92m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+def get_args():
     parser = argparse.ArgumentParser(
         description = "Checks if hosts are reachable."
     )
@@ -11,19 +15,27 @@ if __name__ == "__main__":
     parser.add_argument("-J", "--jump",
                         dest = "jump_host")
     args = parser.parse_args()
+    return args.list, args.jump_host
 
-    if args.jump_host:
-        client = SSHClient()
-        client.look_for_keys(True)
-        client.connect(args.jump_host)
-    with open(args.list , "r") as hosts_file:
-        hosts = hosts_file.readlines()
-        for host in hosts:
-            if args.jump_host:
-                stdin, stdout, stderr = client.exec_command("ping -c1 -w1 " + host + " >/dev/null; echo $?")
-                if stdout.read() == "0":
-                    continue
-            else:
-                if subprocess.call(["ping", "-c1", "-w1", host]) == 0:
-                    continue
-            print(host + " is unreachable.")
+def read_hosts(hosts_file_path):
+    hosts = []
+    with open(hosts_file_path, "r") as hosts_file:
+        hosts = hosts_file.read().splitlines()
+    return hosts
+
+if __name__ == "__main__":
+    hosts_file, jump_host = get_args()
+    hosts = read_hosts(hosts_file)
+
+    for host in hosts:
+        command = []
+        if jump_host:
+            command += ["ssh", "%s" % jump_host]
+            
+        command += ["ping", "-c1", "-w1", "%s" % host]
+        if subprocess.run(command, stdout=subprocess.DEVNULL ).returncode == 0:
+            print(bash_colors.OKGREEN + host + " is reachable." + bash_colors.ENDC)
+            continue
+
+        # this line is reached if any of above doesn't return 0
+        print(bash_colors.FAIL + host + " is unreachable." + bash_colors.ENDC)
